@@ -246,6 +246,7 @@ const TodoList = ({ tasks, onAdd, onToggle, onDelete, onUpdateQuadrant, onUpdate
                                 </div>
                                 <input
                                     type="date"
+                                    key={`date-${selectedTask.id}`} // Force re-mount on task change
                                     value={selectedTask.dueDate || ''}
                                     onChange={(e) => onUpdateDetails(selectedTask.id, { dueDate: e.target.value })}
                                     style={{

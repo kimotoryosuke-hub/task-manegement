@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { CheckSquare, Clock, Grid, LayoutDashboard } from 'lucide-react';
+import { CheckSquare, Clock, Grid, LayoutDashboard, Activity } from 'lucide-react';
 import './styles/index.css';
 
 import TodoList from './components/Todo/TodoList';
 import Pomodoro from './components/Timer/Pomodoro';
 import Matrix from './components/Matrix/EisenhowerMatrix';
+import Habits from './components/Habit/Habits';
 
 function App() {
   const [activeTab, setActiveTab] = useState('todo');
@@ -12,10 +13,18 @@ function App() {
     const saved = localStorage.getItem('tasks');
     return saved ? JSON.parse(saved) : [];
   });
+  const [habits, setHabits] = useState(() => {
+    const saved = localStorage.getItem('habits');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
   }, [tasks]);
+
+  useEffect(() => {
+    localStorage.setItem('habits', JSON.stringify(habits));
+  }, [habits]);
 
   const addTask = (text) => {
     const task = {
@@ -71,12 +80,52 @@ function App() {
     ));
   };
 
+  const updateTaskDetails = (id, updates) => {
+    setTasks(tasks.map(t =>
+      t.id === id ? { ...t, ...updates } : t
+    ));
+  };
+
+  // Habit Functions
+  const addHabit = (title) => {
+    const newHabit = {
+      id: Date.now(),
+      title,
+      icon: '📌', // Default icon
+      color: 'linear-gradient(135deg, #f472b6, #db2777)', // Default pinkish
+      history: {}, // Map of dateString -> boolean
+      createdAt: new Date().toISOString()
+    };
+    setHabits([newHabit, ...habits]);
+  };
+
+  const toggleHabit = (id, dateStr) => {
+    setHabits(habits.map(h => {
+      if (h.id === id) {
+        const newHistory = { ...h.history };
+        if (newHistory[dateStr]) {
+          delete newHistory[dateStr]; // Toggle off
+        } else {
+          newHistory[dateStr] = true; // Toggle on
+          playCompletionSound();
+        }
+        return { ...h, history: newHistory };
+      }
+      return h;
+    }));
+  };
+
+  const deleteHabit = (id) => {
+    setHabits(habits.filter(h => h.id !== id));
+  };
+
   const renderContent = () => {
     switch (activeTab) {
-      case 'todo': return <TodoList tasks={tasks} onAdd={addTask} onToggle={toggleTask} onDelete={deleteTask} onUpdateQuadrant={updateTaskQuadrant} />;
+      case 'todo': return <TodoList tasks={tasks} onAdd={addTask} onToggle={toggleTask} onDelete={deleteTask} onUpdateQuadrant={updateTaskQuadrant} onUpdateDetails={updateTaskDetails} />;
       case 'timer': return <Pomodoro tasks={tasks} onToggle={toggleTask} />;
       case 'matrix': return <Matrix tasks={tasks} onUpdateQuadrant={updateTaskQuadrant} onToggle={toggleTask} onDelete={deleteTask} />;
-      default: return <TodoList tasks={tasks} onAdd={addTask} onToggle={toggleTask} onDelete={deleteTask} onUpdateQuadrant={updateTaskQuadrant} />;
+      case 'habits': return <Habits habits={habits} onToggle={toggleHabit} onAdd={addHabit} onDelete={deleteHabit} />;
+      default: return <TodoList tasks={tasks} onAdd={addTask} onToggle={toggleTask} onDelete={deleteTask} onUpdateQuadrant={updateTaskQuadrant} onUpdateDetails={updateTaskDetails} />;
     }
   };
 
@@ -147,6 +196,23 @@ function App() {
             title="Matrix"
           >
             <Grid size={24} />
+          </button>
+
+          <button
+            className={`btn`}
+            onClick={() => setActiveTab('habits')}
+            style={{
+              color: activeTab === 'habits' ? 'white' : 'var(--text-secondary)',
+              background: activeTab === 'habits' ? 'var(--accent-primary)' : 'transparent',
+              width: '50px',
+              height: '50px',
+              borderRadius: '16px',
+              padding: 0,
+              boxShadow: activeTab === 'habits' ? '0 4px 12px rgba(99, 102, 241, 0.4)' : 'none'
+            }}
+            title="Habits"
+          >
+            <Activity size={24} />
           </button>
 
           <button
